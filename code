@@ -1,0 +1,92 @@
+#define BLYNK_PRINT Serial
+
+#include <SPI.h>
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <BlynkSimpleEsp32.h>
+#include <Wire.h>
+
+#define address 0x4F
+
+#define rood 19
+
+char auth[] = "STMZ47u-7aG_BiDovWO8J9iWR4D4KI7W";
+char ssid[] = "telenet-1036B";
+char pass[] = "aAF3vwajKsVT";
+ float instel = 0;
+
+BlynkTimer timer;
+WidgetLED led1(V1);
+ 
+// This function sends Arduino's up time every second to Virtual Pin (5).
+// In the app, Widget's reading frequency should be set to PUSH. This means
+// that you define how often to send data to Blynk App.
+
+
+
+ 
+void setup()
+{
+  // Debug console
+  Serial.begin(9600);
+ 
+  Blynk.begin(auth, ssid, pass, "server.wyns.it", 8081);
+ 
+  Wire.begin();
+  
+  pinMode(rood, OUTPUT);
+ 
+  // Setup a function to be called every second
+  //timer.setInterval(1000L, sendSensor);
+}
+BLYNK_WRITE(V6)
+{
+  float val = param.asInt();
+  instel = val;
+  
+} 
+void loop()
+{
+  Blynk.run();
+  
+
+
+  Wire.beginTransmission(address);
+  Wire.write(0x00);
+  Wire.requestFrom(address, 2);
+
+     //temperature = Wire.read();
+      
+         int a = Wire.read();
+          int b = Wire.read();
+            float temp = a;
+  temp=temp+((float)b/1024.0);  
+    Serial.print("Temp: ");  
+  Serial.println(temp);  
+  Blynk.virtualWrite(V5, temp);
+  Serial.print("instel temp: ");
+  Serial.println(instel);
+  
+  
+ 
+if(instel <= temp){
+  digitalWrite(rood,LOW);
+  Blynk.virtualWrite(V1, HIGH);
+  Serial.println("LAAG");
+  led1.off();
+  Serial.println("-----------");
+}
+
+if(instel > temp){
+  digitalWrite(rood,HIGH);
+  Blynk.virtualWrite(V1, LOW);
+  Serial.println("hoog");
+  led1.on();
+  Serial.println("-----------");
+}
+
+  delay(1000);
+  timer.run();
+
+     
+}
